@@ -11,10 +11,6 @@ from .compat import decode_base64
 
 
 class TusMiddleware(object):
-    REQUIRED_REQUEST_HEADERS = {
-        'Tus-Resumable': constants.TUS_RESUMABLE_FIELD_NAME
-    }
-
     def __init__(self, get_response=None):
         self.get_response = get_response
 
@@ -29,11 +25,8 @@ class TusMiddleware(object):
         return response
 
     def process_request(self, request):
-        for header, field_name in self.REQUIRED_REQUEST_HEADERS.items():
-            if header not in request.META.get('headers', {}):
-                return HttpResponse('Missing "{}" header.'.format(header), status=status.HTTP_400_BAD_REQUEST)
-            else:
-                setattr(request, field_name, request.META.get('headers', {})[header])
+        # Parse tus client version
+        self.parse_tus_version(request)
 
         # Parse upload length
         self.parse_upload_length(request)
@@ -55,6 +48,16 @@ class TusMiddleware(object):
             response['Tus-Resumable'] = tus_api_version
 
         return response
+
+    @classmethod
+    def parse_tus_version(cls, request):
+        tus_version = request.META.get('headers', {}).get('Tus-Resumable', None)
+
+        if tus_version is None:
+            return
+
+        # Set upload length
+        setattr(request, constants.TUS_RESUMABLE_FIELD_NAME, tus_version)
 
     @classmethod
     def parse_upload_defer_length(cls, request,):

@@ -20,14 +20,6 @@ from tests.tests.factories import UploadFactory
 
 
 class ViewTests(APITestCase):
-    def test_options_incorrect_header(self):
-        # Perform request
-        result = self.client.options(reverse('rest_framework_tus:api:upload-list'))
-        assert result.status_code == status.HTTP_400_BAD_REQUEST
-
-        # Validate response headers
-        assert 'Tus-Resumable' in result
-
     def test_options(self):
         # Perform request
         result = self.client.options(

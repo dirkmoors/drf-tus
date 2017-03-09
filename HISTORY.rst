@@ -3,6 +3,11 @@
 History
 -------
 
+1.5 (2017-03-09)
+++++++++++++++++
+
+* Updated middleware, removed required header (bug!)
+
 1.4 (2017-03-09)
 ++++++++++++++++
 

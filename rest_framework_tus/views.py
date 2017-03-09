@@ -27,6 +27,10 @@ from .compat import reverse
 logger = logging.getLogger(__name__)
 
 
+def has_required_tus_header(request):
+    return hasattr(request, constants.TUS_RESUMABLE_FIELD_NAME)
+
+
 def add_expiry_header(upload, headers):
     if upload.expires:
         headers['Upload-Expires'] = upload.expires.strftime('%a, %d %b %Y %H:%M:%S %Z')
@@ -51,6 +55,10 @@ class UploadMetadata(BaseMetadata):
 
 class TusHeadMixin(object):
     def info(self, request, *args, **kwargs):
+        # Validate tus header
+        if not has_required_tus_header(request):
+            return Response('Missing "{}" header.'.format('Tus-Resumable'), status=status.HTTP_400_BAD_REQUEST)
+
         try:
             upload = self.get_object()
         except Http404:
@@ -76,6 +84,10 @@ class TusHeadMixin(object):
 
 class TusCreateMixin(mixins.CreateModelMixin):
     def create(self, request, *args, **kwargs):
+        # Validate tus header
+        if not has_required_tus_header(request):
+            return Response('Missing "{}" header.'.format('Tus-Resumable'), status=status.HTTP_400_BAD_REQUEST)
+
         # Get file size from request
         upload_length = getattr(request, constants.UPLOAD_LENGTH_FIELD_NAME, -1)
 
@@ -120,6 +132,10 @@ class TusPatchMixin(mixins.UpdateModelMixin):
         raise MethodNotAllowed
 
     def partial_update(self, request, *args, **kwargs):
+        # Validate tus header
+        if not has_required_tus_header(request):
+            return Response('Missing "{}" header.'.format('Tus-Resumable'), status=status.HTTP_400_BAD_REQUEST)
+
         # Validate content type
         self.validate_content_type(request)
 

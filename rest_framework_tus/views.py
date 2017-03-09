@@ -15,6 +15,7 @@ from rest_framework.metadata import BaseMetadata
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
+from rest_framework_tus.parsers import TusUploadStreamParser
 from . import tus_api_version, tus_api_version_supported, tus_api_extensions, tus_api_checksum_algorithms, \
     settings as tus_settings, constants, signals, states
 
@@ -148,6 +149,11 @@ class TusCreateMixin(mixins.CreateModelMixin):
 
 
 class TusPatchMixin(mixins.UpdateModelMixin):
+    def get_chunk(self, request):
+        if TusUploadStreamParser in self.parser_classes:
+            return request.data['chunk']
+        return request.body
+
     def update(self, request, *args, **kwargs):
         raise MethodNotAllowed
 
@@ -179,7 +185,7 @@ class TusPatchMixin(mixins.UpdateModelMixin):
 
         # Write chunk
         try:
-            chunk_file = write_chunk_to_temp_file(request.body)
+            chunk_file = write_chunk_to_temp_file(self.get_chunk(request))
         except Exception as e:
             return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
 
@@ -228,10 +234,10 @@ class TusPatchMixin(mixins.UpdateModelMixin):
     def validate_content_type(cls, request):
         content_type = request.META.get('headers', {}).get('Content-Type', '')
 
-        if not content_type or content_type != 'application/upload_offset+octet-stream':
+        if not content_type or content_type != TusUploadStreamParser.media_type:
             return Response(
-                'Invalid value for "Content-Type" header: {}. Expected "application/upload_offset+octet-stream".'
-                    .format(content_type), status=status.HTTP_400_BAD_REQUEST)
+                'Invalid value for "Content-Type" header: {}. Expected "{}".'
+                    .format(content_type, TusUploadStreamParser.media_type), status=status.HTTP_400_BAD_REQUEST)
 
 
 class TusTerminateMixin(mixins.DestroyModelMixin):
@@ -259,6 +265,7 @@ class UploadViewSet(TusCreateMixin,
     metadata_class = UploadMetadata
     lookup_field = 'guid'
     lookup_value_regex = '[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}'
+    parser_classes = [TusUploadStreamParser]
 
     def get_queryset(self):
         return get_upload_model().objects.all()

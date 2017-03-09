@@ -134,7 +134,11 @@ class TusCreateMixin(mixins.CreateModelMixin):
         # Add upload expiry to headers
         add_expiry_header(upload, headers)
 
-        return Response(headers=headers, status=status.HTTP_201_CREATED)
+        # By default, don't include a response body
+        if not tus_settings.TUS_RESPONSE_BODY_ENABLED:
+            return Response(headers=headers, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.data, headers=headers, status=status.HTTP_201_CREATED)
 
     def get_success_headers(self, data):
         try:
@@ -211,7 +215,14 @@ class TusPatchMixin(mixins.UpdateModelMixin):
         # Add upload expiry to headers
         add_expiry_header(upload, headers)
 
-        return Response(headers=headers, status=status.HTTP_204_NO_CONTENT)
+        # By default, don't include a response body
+        if not tus_settings.TUS_RESPONSE_BODY_ENABLED:
+            return Response(headers=headers, status=status.HTTP_204_NO_CONTENT)
+
+        # Create serializer
+        serializer = self.get_serializer(instance=upload)
+
+        return Response(serializer.data, headers=headers, status=status.HTTP_204_NO_CONTENT)
 
     @classmethod
     def validate_content_type(cls, request):

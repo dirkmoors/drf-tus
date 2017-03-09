@@ -3,6 +3,11 @@
 History
 -------
 
+1.8 (2017-03-09)
+++++++++++++++++
+
+* Introduced setting to include serializer data in respons body
+
 1.7 (2017-03-09)
 ++++++++++++++++
 

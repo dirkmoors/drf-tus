@@ -59,6 +59,7 @@ Features
 --------
 
 This library implements the following TUS API v1.0.0 protocols:
+
 * Core Protocol (http://tus.io/protocols/resumable-upload.html#core-protocol)
 * Creation Protocol (http://tus.io/protocols/resumable-upload.html#creation)
 * Expiration Protocol (http://tus.io/protocols/resumable-upload.html#expiration)

@@ -9,10 +9,10 @@ from six import with_metaclass
 from django.utils.module_loading import import_string
 
 from rest_framework_tus import signals
-from .settings import TUS_SAVE_STRATEGY_CLASS
+from .settings import TUS_SAVE_HANDLER_CLASS
 
 
-class AbstractUploadSaveStrategy(with_metaclass(ABCMeta, object)):
+class AbstractUploadSaveHandler(with_metaclass(ABCMeta, object)):
     def __init__(self, upload):
         self.upload = upload
 
@@ -37,8 +37,8 @@ class AbstractUploadSaveStrategy(with_metaclass(ABCMeta, object)):
         self.upload.save()
 
 
-class DefaultSaveStrategy(AbstractUploadSaveStrategy):
-    destination_file_field = 'destination'
+class DefaultSaveHandler(AbstractUploadSaveHandler):
+    destination_file_field = 'uploaded_file'
 
     def handle_save(self):
         # Save temporary field to file field
@@ -49,5 +49,5 @@ class DefaultSaveStrategy(AbstractUploadSaveStrategy):
         self.finish()
 
 
-def get_save_strategy(import_path=None):
-    return import_string(import_path or TUS_SAVE_STRATEGY_CLASS)
+def get_save_handler(import_path=None):
+    return import_string(import_path or TUS_SAVE_HANDLER_CLASS)

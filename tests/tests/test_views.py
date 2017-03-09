@@ -307,7 +307,7 @@ class ViewTests(APITestCase):
         assert upload.state == states.DONE
 
         # Compare data
-        uploaded_data = read_bytes_from_field_file(upload.destination.file)
+        uploaded_data = read_bytes_from_field_file(upload.uploaded_file.file)
         assert uploaded_data == blob
 
         # Cleanup file

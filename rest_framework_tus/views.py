@@ -124,9 +124,7 @@ class TusCreateMixin(mixins.CreateModelMixin):
         upload = serializer.instance
 
         # Prepare response headers
-        headers = {
-            'Location': reverse('rest_framework_tus:api:upload-detail', kwargs={'guid': upload.guid}),
-        }
+        headers = self.get_success_headers(serializer.data)
 
         # Maybe we're auto-expiring the upload...
         if tus_settings.TUS_UPLOAD_EXPIRES is not None:
@@ -137,6 +135,12 @@ class TusCreateMixin(mixins.CreateModelMixin):
         add_expiry_header(upload, headers)
 
         return Response(headers=headers, status=status.HTTP_201_CREATED)
+
+    def get_success_headers(self, data):
+        try:
+            return {'Location': reverse('rest_framework_tus:api:upload-detail', kwargs={'guid': data['guid']})}
+        except (TypeError, KeyError):
+            return {}
 
 
 class TusPatchMixin(mixins.UpdateModelMixin):

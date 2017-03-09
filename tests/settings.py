@@ -27,8 +27,6 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sites",
 
-    'django_extensions',
-
     "rest_framework_tus",
 ]
 

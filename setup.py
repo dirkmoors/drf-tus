@@ -60,10 +60,7 @@ setup(
         'Django>=1.8,<1.11',
         'djangorestframework>=3.5.4',
         'jsonfield>=2.0.0',
-        'django-fsm==2.5.0',
-        'pytest>=3.0.0',
-        'pytest-django>=3.1.0',
-        'factory_boy>=2.6.1'
+        'django-fsm==2.5.0'
     ],
     license="MIT",
     zip_safe=False,

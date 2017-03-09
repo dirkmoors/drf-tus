@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-import base64
-
 from unittest.case import TestCase
 
 from rest_framework_tus.utils import encode_upload_metadata, encode_base64_to_string
+from rest_framework_tus.compat import decode_base64
 
 
 class UtilsTest(TestCase):
@@ -16,7 +15,7 @@ class UtilsTest(TestCase):
         result = encode_base64_to_string(data)
 
         # Decode
-        initial = base64.decodebytes(result.encode('utf-8'))
+        initial = decode_base64(result.encode('utf-8'))
 
         assert initial == data
 

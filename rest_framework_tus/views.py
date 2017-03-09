@@ -6,7 +6,6 @@ import json
 import os
 
 from django.http import Http404
-from django.urls.base import reverse
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 
@@ -16,17 +15,21 @@ from rest_framework.metadata import BaseMetadata
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from rest_framework_tus.utils import is_correct_checksum_for_file
 from . import tus_api_version, tus_api_version_supported, tus_api_extensions, tus_api_checksum_algorithms, \
     settings as tus_settings, constants, signals, states
 
 from .models import get_upload_model
 from .exceptions import Conflict
 from .serializers import UploadSerializer
-from .utils import encode_upload_metadata, get_or_create_temp_file_for_upload, \
-    write_chunk_to_temp_file, read_bytes
+from .utils import encode_upload_metadata, write_chunk_to_temp_file, read_bytes, checksum_matches
+from .compat import reverse
 
 logger = logging.getLogger(__name__)
+
+
+def add_expiry_header(upload, headers):
+    if upload.expires:
+        headers['Upload-Expires'] = upload.expires.strftime('%a, %d %b %Y %H:%M:%S %Z')
 
 
 class UploadMetadata(BaseMetadata):
@@ -44,11 +47,6 @@ class UploadMetadata(BaseMetadata):
                 'Tus-Resumable,upload-length,upload-metadata,Location,Upload-Offset,content-type',
             'Cache-Control': 'no-store'
         }
-
-
-def add_expiry_header(upload, headers):
-    if upload.expires:
-        headers['Upload-Expires'] = upload.expires.strftime('%a, %d %b %Y %H:%M:%S %Z')
 
 
 class TusHeadMixin(object):
@@ -136,7 +134,7 @@ class TusPatchMixin(mixins.UpdateModelMixin):
             raise Conflict
 
         # Make sure there is a tempfile for the upload
-        get_or_create_temp_file_for_upload(upload)
+        assert upload.get_or_create_temporary_file()
 
         # Change state
         if upload.state == states.INITIAL:
@@ -156,7 +154,7 @@ class TusPatchMixin(mixins.UpdateModelMixin):
                 os.remove(chunk_file)
                 return Response('Unsupported Checksum Algorithm: {}.'.format(
                     upload_checksum[0]), status=status.HTTP_400_BAD_REQUEST)
-            elif not is_correct_checksum_for_file(
+            elif not checksum_matches(
                 upload_checksum[0], upload_checksum[1], chunk_file):
                 os.remove(chunk_file)
                 return Response('Checksum Mismatch.', status=460)
@@ -211,8 +209,6 @@ class TusTerminateMixin(mixins.DestroyModelMixin):
 
 class UploadViewSet(TusCreateMixin,
                     TusPatchMixin,
-                    # mixins.ListModelMixin,
-                    # mixins.RetrieveModelMixin,
                     TusHeadMixin,
                     TusTerminateMixin,
                     GenericViewSet):

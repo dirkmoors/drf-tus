@@ -1,23 +1,32 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-import base64
 
 from django.http.response import HttpResponse
-from django.utils.deprecation import MiddlewareMixin
 
 from rest_framework import status
 
-from rest_framework_tus import tus_api_version, constants
+from . import tus_api_version, constants
+from .compat import decode_base64
 
 
-class TusMiddleware(MiddlewareMixin):
+class TusMiddleware(object):
     REQUIRED_REQUEST_HEADERS = {
         'Tus-Resumable': constants.TUS_RESUMABLE_FIELD_NAME
     }
 
     def __init__(self, get_response=None):
-        super(TusMiddleware, self).__init__(get_response)
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = None
+        if hasattr(self, 'process_request'):
+            response = self.process_request(request)
+        if not response:
+            response = self.get_response(request)
+        if hasattr(self, 'process_response'):
+            response = self.process_response(request, response)
+        return response
 
     def process_request(self, request):
         for header, field_name in self.REQUIRED_REQUEST_HEADERS.items():
@@ -115,7 +124,7 @@ class TusMiddleware(MiddlewareMixin):
             key, value = key_value_pair.split(' ')
 
             # Store data
-            upload_metadata[key] = base64.decodebytes(value.encode('utf-8')).decode('ascii')
+            upload_metadata[key] = decode_base64(value.encode('utf-8')).decode('ascii')
 
         # Set upload_metadata
         setattr(request, constants.UPLOAD_METADATA_FIELD_NAME, upload_metadata)

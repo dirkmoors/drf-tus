@@ -5,16 +5,17 @@ import copy
 import json
 
 from datetime import timedelta
-from django.urls.base import reverse
+
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from rest_framework_tus import settings as tus_settings, tus_api_extensions, tus_api_version_supported, tus_api_version, \
     states
+from rest_framework_tus.compat import reverse
 from rest_framework_tus.models import get_upload_model
 from rest_framework_tus.utils import encode_upload_metadata, encode_base64_to_string, \
-    read_bytes_from_field_file, pack_checksum
+    read_bytes_from_field_file, create_checksum_header
 from tests.tests.factories import UploadFactory
 
 
@@ -123,7 +124,8 @@ class ViewTests(APITestCase):
 
         # Validate response headers
         assert 'Tus-Resumable' in result
-        assert result['Location'] == reverse('rest_framework_tus:api:upload-detail', kwargs={'guid': upload.guid})
+        assert result['Location'].endswith(
+            reverse('rest_framework_tus:api:upload-detail', kwargs={'guid': upload.guid}))
 
     def test_create_too_big(self):
         # Prepare creation headers
@@ -166,7 +168,8 @@ class ViewTests(APITestCase):
 
         # Validate response headers
         assert 'Tus-Resumable' in result
-        assert result['Location'] == reverse('rest_framework_tus:api:upload-detail', kwargs={'guid': upload.guid})
+        assert result['Location'].endswith(
+            reverse('rest_framework_tus:api:upload-detail', kwargs={'guid': upload.guid}))
 
     def test_terminate_while_saving(self):
         # Create upload
@@ -267,7 +270,7 @@ class ViewTests(APITestCase):
 
             # Prepare checksum
             if checksum_algorithm is not None:
-                headers['Upload-Checksum'] = checksum or pack_checksum(chunk, checksum_algorithm)
+                headers['Upload-Checksum'] = checksum or create_checksum_header(chunk, checksum_algorithm)
 
             # Perform request
             result = self.client.patch(

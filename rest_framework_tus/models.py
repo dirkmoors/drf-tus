@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 import collections
 import os
+import tempfile
 import uuid
 
 from django.core.exceptions import ImproperlyConfigured
@@ -13,7 +14,7 @@ from jsonfield import JSONField
 
 from rest_framework_tus import signals
 from rest_framework_tus import states
-from rest_framework_tus.utils import write_bytes_to_file, get_expiry_datetime
+from rest_framework_tus.utils import write_bytes_to_file
 
 
 class AbstractUpload(models.Model):
@@ -44,10 +45,10 @@ class AbstractUpload(models.Model):
         self.upload_offset += chunk_size
         self.save()
 
-    def delete(self, using=None, keep_parents=False):
+    def delete(self, *args, **kwargs):
         if self.temporary_file_path and os.path.exists(self.temporary_file_path):
             os.remove(self.temporary_file_path)
-        super(AbstractUpload, self).delete(using=using, keep_parents=keep_parents)
+        super(AbstractUpload, self).delete(*args, **kwargs)
 
     def generate_filename(self):
         return os.path.join('{}.bin'.format(uuid.uuid4()))
@@ -63,6 +64,15 @@ class AbstractUpload(models.Model):
 
     def temporary_file_exists(self):
         return self.temporary_file_path and os.path.isfile(self.temporary_file_path)
+
+    def get_or_create_temporary_file(self):
+        if not self.temporary_file_path:
+            fd, path = tempfile.mkstemp(prefix="tus-upload-")
+            os.close(fd)
+            self.temporary_file_path = path
+            self.save()
+        assert os.path.isfile(self.temporary_file_path)
+        return self.temporary_file_path
 
     @transition(field=state, source=states.INITIAL, target=states.RECEIVING, conditions=[temporary_file_exists])
     def start_receiving(self):
@@ -96,10 +106,10 @@ class Upload(AbstractUpload):
     """
     destination = models.FileField(upload_to='uploaded')
 
-    def delete(self, using=None, keep_parents=False):
+    def delete(self, *args, **kwargs):
         if self.state == states.DONE:
             self.destination.delete()
-        super(Upload, self).delete(using=using, keep_parents=keep_parents)
+        super(Upload, self).delete(*args, **kwargs)
 
 
 def get_upload_model():

@@ -3,16 +3,20 @@ from __future__ import unicode_literals
 
 import os
 
-import base64
 import copy
 import tempfile
 import hashlib
 
-from dateutil.relativedelta import relativedelta
-from django.utils import timezone
+from .compat import encode_base64
 
 
 def encode_base64_to_string(string_value):
+    """
+    Helper to encode a string or bytes value to a base64 string
+
+    :param six.text_types string_value:
+    :return str:
+    """
     data = copy.copy(string_value)
 
     if not isinstance(data, bytes):
@@ -21,7 +25,7 @@ def encode_base64_to_string(string_value):
         else:
             data = str(data).encode('utf-8')
 
-    return base64.encodebytes(data).decode('ascii').rstrip('\n')
+    return encode_base64(data).decode('ascii').rstrip('\n')
 
 
 def encode_upload_metadata(upload_metadata):
@@ -29,7 +33,7 @@ def encode_upload_metadata(upload_metadata):
     Encodes upload metadata according to the TUS 1.0.0 spec (http://tus.io/protocols/resumable-upload.html#creation)
 
     :param dict upload_metadata:
-    :return:
+    :return str:
     """
     # Prepare encoded data
     encoded_data = [(key, encode_base64_to_string(value))
@@ -69,6 +73,12 @@ def write_bytes_to_file(file_path, offset, bytes, makedirs=False):
 
 
 def read_bytes_from_field_file(field_file):
+    """
+    Returns the bytes read from a FieldFile
+
+    :param ~django.db.models.fields.files.FieldFile field_file:
+    :return six.binary_type: bytes read from the given field_file
+    """
     try:
         field_file.open()
         result = field_file.read()
@@ -78,13 +88,26 @@ def read_bytes_from_field_file(field_file):
 
 
 def read_bytes(path):
+    """
+    Returns the bytes read from a local file at the given path
+
+    :param str path: The local path to the file to read
+    :return six.binary_type: bytes read from the given field_file
+    """
     with open(path, 'r+b') as fh:
         result = fh.read()
     return result
 
 
 def write_chunk_to_temp_file(bytes):
-    chunk_file = create_temp_file_for_chunk()
+    """
+    Write some bytes to a local temporary file and return the path
+
+    :param six.binary_type bytes: The bytes to write
+    :return str: The local path to the temporary file that has been written
+    """
+    fd, chunk_file = tempfile.mkstemp(prefix="tus-upload-chunk-")
+    os.close(fd)
 
     with open(chunk_file, 'wb') as fh:
         fh.write(bytes)
@@ -92,38 +115,40 @@ def write_chunk_to_temp_file(bytes):
     return chunk_file
 
 
-def create_temp_file_for_chunk():
-    fd, path = tempfile.mkstemp(prefix="tus-upload-chunk-")
-    os.close(fd)
-    return path
-
-
-def get_or_create_temp_file_for_upload(upload):
-    if not upload.temporary_file_path:
-        fd, path = tempfile.mkstemp(prefix="tus-upload-")
-        os.close(fd)
-        upload.temporary_file_path = path
-        upload.save()
-    assert os.path.isfile(upload.temporary_file_path)
-    return upload.temporary_file_path
-
-
 def create_checksum(bytes, checksum_algorithm):
+    """
+    Create a hex-checksum for the given bytes using the given algorithm
+
+    :param six.binary_type bytes: The bytes to create the checksum for
+    :param str checksum_algorithm: The algorithm to use (e.g. "md5")
+    :return str: The checksum (hex)
+    """
     m = hashlib.new(checksum_algorithm)
     m.update(bytes)
     return m.hexdigest()
 
 
-def pack_checksum(bytes, checksum_algorithm):
-    checksum =create_checksum(bytes, checksum_algorithm)
+def create_checksum_header(bytes, checksum_algorithm):
+    """
+    Creates a hex-checksum header for the given bytes using the given algorithm
+
+    :param six.binary_type bytes: The bytes to create the checksum for
+    :param str checksum_algorithm: The algorithm to use (e.g. "md5")
+    :return str: The checksum algorithm, followed by the checksum (hex)
+    """
+    checksum = create_checksum(bytes, checksum_algorithm)
     return '{checksum_algorithm} {checksum}'.format(checksum_algorithm=checksum_algorithm, checksum=checksum)
 
 
-def is_correct_checksum_for_file(checksum_algorithm, checksum, file_path):
+def checksum_matches(checksum_algorithm, checksum, file_path):
+    """
+    Checks if the given checksum matches the checksum for the data in the file
+
+    :param str checksum_algorithm: The checksum algorithm to use
+    :param str checksum: The original hex-checksum to match against
+    :param str file_path: The local path to the file to read the data from
+    :return bool: Whether or not the newly calculated checksum matches the given checksum
+    """
     bytes = read_bytes(file_path)
     bytes_checksum = create_checksum(bytes, checksum_algorithm)
     return bytes_checksum == checksum
-
-
-def get_expiry_datetime():
-    return timezone.now() + relativedelta(days=1)

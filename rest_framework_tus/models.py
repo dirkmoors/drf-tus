@@ -13,8 +13,7 @@ from jsonfield import JSONField
 
 from rest_framework_tus import signals
 from rest_framework_tus import states
-from rest_framework_tus.storage import get_save_strategy
-from rest_framework_tus.utils import write_bytes_to_file
+from rest_framework_tus.utils import write_bytes_to_file, get_expiry_datetime
 
 
 class AbstractUpload(models.Model):
@@ -33,6 +32,8 @@ class AbstractUpload(models.Model):
     filename = models.CharField(max_length=255, blank=True)
 
     temporary_file_path = models.CharField(max_length=4096, null=True)
+
+    expires = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         abstract = True

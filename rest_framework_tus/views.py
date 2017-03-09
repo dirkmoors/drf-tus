@@ -7,6 +7,7 @@ import os
 
 from django.http import Http404
 from django.urls.base import reverse
+from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import mixins, status
@@ -45,6 +46,11 @@ class UploadMetadata(BaseMetadata):
         }
 
 
+def add_expiry_header(upload, headers):
+    if upload.expires:
+        headers['Upload-Expires'] = upload.expires.strftime('%a, %d %b %Y %H:%M:%S %Z')
+
+
 class TusHeadMixin(object):
     def info(self, request, *args, **kwargs):
         try:
@@ -64,6 +70,9 @@ class TusHeadMixin(object):
         if upload.upload_metadata:
             headers['Upload-Metadata'] = encode_upload_metadata(json.loads(upload.upload_metadata))
 
+        # Add upload expiry to headers
+        add_expiry_header(upload, headers)
+
         return Response(headers=headers, status=status.HTTP_200_OK)
 
 
@@ -77,7 +86,7 @@ class TusCreateMixin(mixins.CreateModelMixin):
             return Response('Invalid "Upload-Length". Maximum value: {}.'.format(tus_settings.TUS_MAX_FILE_SIZE),
                             status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE)
 
-        # If filesize is not given, we expect the defer header!
+        # If upload_length is not given, we expect the defer header!
         if not upload_length or upload_length < 0:
             if getattr(request, constants.UPLOAD_DEFER_LENGTH_FIELD_NAME, -1) != 1:
                 return Response('Missing "{Upload-Defer-Length}" header.', status=status.HTTP_400_BAD_REQUEST)
@@ -96,6 +105,14 @@ class TusCreateMixin(mixins.CreateModelMixin):
         headers = {
             'Location': reverse('rest_framework_tus:api:upload-detail', kwargs={'guid': upload.guid}),
         }
+
+        # Maybe we're auto-expiring the upload...
+        if tus_settings.TUS_UPLOAD_EXPIRES is not None:
+            upload.expires = timezone.now() + tus_settings.TUS_UPLOAD_EXPIRES
+            upload.save()
+
+        # Add upload expiry to headers
+        add_expiry_header(upload, headers)
 
         return Response(headers=headers, status=status.HTTP_201_CREATED)
 
@@ -160,6 +177,9 @@ class TusPatchMixin(mixins.UpdateModelMixin):
         if upload.upload_length == upload.upload_offset:
             # Trigger signal
             signals.received.send(sender=upload.__class__, instance=upload)
+
+        # Add upload expiry to headers
+        add_expiry_header(upload, headers)
 
         return Response(headers=headers, status=status.HTTP_204_NO_CONTENT)
 

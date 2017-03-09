@@ -8,6 +8,9 @@ import copy
 import tempfile
 import hashlib
 
+from dateutil.relativedelta import relativedelta
+from django.utils import timezone
+
 
 def encode_base64_to_string(string_value):
     data = copy.copy(string_value)
@@ -120,3 +123,7 @@ def is_correct_checksum_for_file(checksum_algorithm, checksum, file_path):
     bytes = read_bytes(file_path)
     bytes_checksum = create_checksum(bytes, checksum_algorithm)
     return bytes_checksum == checksum
+
+
+def get_expiry_datetime():
+    return timezone.now() + relativedelta(days=1)

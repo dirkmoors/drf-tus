@@ -4,7 +4,9 @@ from __future__ import unicode_literals
 import copy
 import json
 
+from datetime import timedelta
 from django.urls.base import reverse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -64,7 +66,8 @@ class ViewTests(APITestCase):
 
     def test_head(self):
         # Create upload
-        upload = UploadFactory(upload_metadata=json.dumps({'filename': 'test_file.jpg'}))
+        upload = UploadFactory(upload_metadata=json.dumps({'filename': 'test_file.jpg'}),
+                               expires=timezone.now() + timedelta(hours=1))
 
         # Perform request
         result = self.client.head(
@@ -78,6 +81,7 @@ class ViewTests(APITestCase):
         assert 'Tus-Resumable' in result
         assert int(result['Upload-Offset']) >= 0
         assert result['Upload-Metadata'] == 'filename {}'.format(encode_base64_to_string('test_file.jpg'))
+        assert result['Upload-Expires'] is not None
 
     def test_create_without_length(self):
         # Prepare creation headers

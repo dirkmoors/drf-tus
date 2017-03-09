@@ -104,7 +104,7 @@ class Upload(AbstractUpload):
     """
     Default Upload model
     """
-    uploaded_file = models.FileField(upload_to='uploaded')
+    uploaded_file = models.FileField(upload_to='uploaded', blank=True, null=True)
 
     def delete(self, *args, **kwargs):
         if self.state == states.DONE:

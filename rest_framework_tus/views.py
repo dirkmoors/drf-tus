@@ -107,9 +107,21 @@ class TusCreateMixin(mixins.CreateModelMixin):
         # Get data from metadata
         filename = upload_metadata.get('filename', '')
 
+        # Retrieve serializer
+        serializer = self.get_serializer(data={
+            'upload_length': upload_length,
+            'upload_metadata': json.dumps(upload_metadata),
+            'filename': filename,
+        })
+
+        # Validate serializer
+        serializer.is_valid(raise_exception=True)
+
         # Create upload object
-        upload = get_upload_model().objects.create(
-            upload_length=upload_length, upload_metadata=json.dumps(upload_metadata), filename=filename)
+        self.perform_create(serializer)
+
+        # Get upload from serializer
+        upload = serializer.instance
 
         # Prepare response headers
         headers = {
@@ -218,7 +230,7 @@ class TusTerminateMixin(mixins.DestroyModelMixin):
                             status=status.HTTP_409_CONFLICT)
 
         # Destroy object
-        upload.delete()
+        self.perform_destroy(upload)
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 

@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 import logging
 import json
+import os
 
 from django.http import Http404
 from django.urls.base import reverse
@@ -14,12 +15,15 @@ from rest_framework.metadata import BaseMetadata
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from rest_framework_tus import constants, signals, states
-from rest_framework_tus.exceptions import Conflict
-from rest_framework_tus.serializers import UploadSerializer
-from rest_framework_tus.utils import encode_upload_metadata, get_or_create_temp_file
-from . import tus_api_version, tus_api_version_supported, tus_api_extensions, settings as tus_settings
+from rest_framework_tus.utils import is_correct_checksum_for_file
+from . import tus_api_version, tus_api_version_supported, tus_api_extensions, tus_api_checksum_algorithms, \
+    settings as tus_settings, constants, signals, states
+
 from .models import get_upload_model
+from .exceptions import Conflict
+from .serializers import UploadSerializer
+from .utils import encode_upload_metadata, get_or_create_temp_file_for_upload, \
+    write_chunk_to_temp_file, read_bytes
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +35,7 @@ class UploadMetadata(BaseMetadata):
             'Tus-Version': ','.join(tus_api_version_supported),
             'Tus-Extension': ','.join(tus_api_extensions),
             'Tus-Max-Size': tus_settings.TUS_MAX_FILE_SIZE,
+            'Tus-Checksum-Algorithm': ','.join(tus_api_checksum_algorithms),
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': 'PATCH,HEAD,GET,POST,OPTIONS',
             'Access-Control-Expose-Headers': 'Tus-Resumable,upload-length,upload-metadata,Location,Upload-Offset',
@@ -114,19 +119,39 @@ class TusPatchMixin(mixins.UpdateModelMixin):
             raise Conflict
 
         # Make sure there is a tempfile for the upload
-        get_or_create_temp_file(upload)
+        get_or_create_temp_file_for_upload(upload)
 
         # Change state
         if upload.state == states.INITIAL:
             upload.start_receiving()
             upload.save()
 
+        # Write chunk
+        try:
+            chunk_file = write_chunk_to_temp_file(request.body)
+        except Exception as e:
+            return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
+
+        # Check checksum  (http://tus.io/protocols/resumable-upload.html#checksum)
+        upload_checksum = getattr(request, constants.UPLOAD_CHECKSUM_FIELD_NAME, None)
+        if upload_checksum is not None:
+            if upload_checksum[0] not in tus_api_checksum_algorithms:
+                os.remove(chunk_file)
+                return Response('Unsupported Checksum Algorithm: {}.'.format(
+                    upload_checksum[0]), status=status.HTTP_400_BAD_REQUEST)
+            elif not is_correct_checksum_for_file(
+                upload_checksum[0], upload_checksum[1], chunk_file):
+                os.remove(chunk_file)
+                return Response('Checksum Mismatch.', status=460)
+
         # Write file
         chunk_size = int(request.META.get('CONTENT_LENGTH', 102400))
         try:
-            upload.write_data(request.body, chunk_size)
+            upload.write_data(read_bytes(chunk_file), chunk_size)
         except Exception as e:
             return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
+        finally:
+            os.remove(chunk_file)
 
         headers = {
             'Upload-Offset': upload.upload_offset,

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-import json
 import copy
+import json
 
 from django.urls.base import reverse
 from rest_framework import status
@@ -11,7 +11,8 @@ from rest_framework.test import APITestCase
 from rest_framework_tus import settings as tus_settings, tus_api_extensions, tus_api_version_supported, tus_api_version, \
     states
 from rest_framework_tus.models import get_upload_model
-from rest_framework_tus.utils import encode_upload_metadata, encode_base64_to_string
+from rest_framework_tus.utils import encode_upload_metadata, encode_base64_to_string, \
+    read_bytes_from_field_file, pack_checksum
 from tests.tests.factories import UploadFactory
 
 
@@ -163,61 +164,6 @@ class ViewTests(APITestCase):
         assert 'Tus-Resumable' in result
         assert result['Location'] == reverse('rest_framework_tus:api:upload-detail', kwargs={'guid': upload.guid})
 
-    def test_upload(self):
-        # Define blob
-        blob = 'Şởოè śấოρļể ẮŞĈİĪ-ŧểхŧ'.encode('utf-8')   # Make sure the data are **BYTES**!!!!
-
-        # Create test data
-        test_data = ('test_data.txt', blob)
-
-        # Create upload
-        upload = UploadFactory(
-            filename=test_data[0], upload_metadata=json.dumps({'filename': test_data[0]}),
-            upload_length=len(test_data[1]))
-
-        # Define chunk size
-        chunk_size = 4  # 4 bytes
-
-        # Write
-        upload_offset = 0
-        data = copy.copy(test_data[1])
-        while True:
-            # Take chunk
-            chunk = data[:chunk_size]
-
-            # Prepare headers
-            headers = {
-                'Tus-Resumable': tus_api_version,
-                'Upload-Offset': upload_offset
-            }
-
-            # Perform request
-            result = self.client.patch(
-                reverse('rest_framework_tus:api:upload-detail', kwargs={'guid': upload.guid}), data=chunk,
-                headers=headers, content_type='application/offset+octet-stream')
-
-            # Check result
-            assert result.status_code == status.HTTP_204_NO_CONTENT
-
-            # Update data
-            data = data[chunk_size:]
-
-            # Update iterator
-            upload_offset += len(chunk)
-
-            # Check final piece
-            if upload_offset == len(test_data[1]):
-                break
-
-        # Reload upload
-        upload = get_upload_model().objects.get(guid=upload.guid)
-
-        # Assert file is ready
-        assert upload.state == states.DONE
-
-        # Cleanup file
-        upload.delete()
-
     def test_terminate_while_saving(self):
         # Create upload
         upload = UploadFactory(
@@ -259,3 +205,103 @@ class ViewTests(APITestCase):
 
         # Verify existence
         assert get_upload_model().objects.filter(guid=upload.guid).exists() is False
+
+    def test_upload_without_checksum(self):
+        self._test_upload_with_checksum(None)
+
+    def test_upload_with_md5_checksum(self):
+        self._test_upload_with_checksum('md5')
+
+    def test_upload_with_sha1_checksum(self):
+        self._test_upload_with_checksum('sha1')
+
+    def test_upload_with_sha224_checksum(self):
+        self._test_upload_with_checksum('sha224')
+
+    def test_upload_with_sha256_checksum(self):
+        self._test_upload_with_checksum('sha256')
+
+    def test_upload_with_sha384_checksum(self):
+        self._test_upload_with_checksum('sha384')
+
+    def test_upload_with_sha512_checksum(self):
+        self._test_upload_with_checksum('sha512')
+
+    def test_upload_with_unsupported_checksum(self):
+        self._test_upload_with_checksum('ripemd160', expected_failure=status.HTTP_400_BAD_REQUEST)
+
+    def test_upload_with_mismatching_checksum(self):
+        self._test_upload_with_checksum('md5', checksum='md5 blabla', expected_failure=460)
+
+    def _test_upload_with_checksum(self, checksum_algorithm, checksum=None, expected_failure=None):
+        # Define blob
+        blob = 'Şởოè śấოρļể ẮŞĈİĪ-ŧểхŧ'.encode('utf-8')   # Make sure the data are **BYTES**!!!!
+
+        # Create test data
+        test_data = ('test_data.txt', blob)
+
+        # Create upload
+        upload = UploadFactory(
+            filename=test_data[0], upload_metadata=json.dumps({'filename': test_data[0]}),
+            upload_length=len(test_data[1]))
+
+        # Define chunk size
+        chunk_size = 4  # 4 bytes
+
+        # Write
+        upload_offset = 0
+        data = copy.copy(test_data[1])
+        while True:
+            # Take chunk
+            chunk = data[:chunk_size]
+
+            # Prepare headers
+            headers = {
+                'Tus-Resumable': tus_api_version,
+                'Upload-Offset': upload_offset,
+            }
+
+            # Prepare checksum
+            if checksum_algorithm is not None:
+                headers['Upload-Checksum'] = checksum or pack_checksum(chunk, checksum_algorithm)
+
+            # Perform request
+            result = self.client.patch(
+                reverse('rest_framework_tus:api:upload-detail', kwargs={'guid': upload.guid}), data=chunk,
+                headers=headers, content_type='application/offset+octet-stream')
+
+            # Maybe we expect a failure
+            if expected_failure:
+                assert result.status_code == expected_failure
+
+                # Cleanup file
+                upload.delete()
+
+                # The test is over here!
+                return
+
+            # Check result
+            assert result.status_code == status.HTTP_204_NO_CONTENT
+
+            # Update data
+            data = data[chunk_size:]
+
+            # Update iterator
+            upload_offset += len(chunk)
+
+            # Check final piece
+            if upload_offset == len(test_data[1]):
+                break
+
+        # Reload upload
+        upload = get_upload_model().objects.get(guid=upload.guid)
+
+        # Assert file is ready
+        assert upload.state == states.DONE
+
+        # Compare data
+        uploaded_data = read_bytes_from_field_file(upload.destination.file)
+        assert uploaded_data == blob
+
+        # Cleanup file
+        upload.delete()

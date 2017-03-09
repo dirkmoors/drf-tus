@@ -44,9 +44,8 @@ class AbstractUpload(models.Model):
         self.save()
 
     def delete(self, using=None, keep_parents=False):
-        if self.state != states.DONE:
-            if os.path.exists(self.temporary_file_path):
-                os.remove(self.temporary_file_path)
+        if self.temporary_file_path and os.path.exists(self.temporary_file_path):
+            os.remove(self.temporary_file_path)
         super(AbstractUpload, self).delete(using=using, keep_parents=keep_parents)
 
     def generate_filename(self):

@@ -6,6 +6,7 @@ import os
 import base64
 import copy
 import tempfile
+import hashlib
 
 
 def encode_base64_to_string(string_value):
@@ -64,11 +65,58 @@ def write_bytes_to_file(file_path, offset, bytes, makedirs=False):
     return len(bytes)
 
 
-def get_or_create_temp_file(upload):
+def read_bytes_from_field_file(field_file):
+    try:
+        field_file.open()
+        result = field_file.read()
+    finally:
+        field_file.close()
+    return result
+
+
+def read_bytes(path):
+    with open(path, 'r+b') as fh:
+        result = fh.read()
+    return result
+
+
+def write_chunk_to_temp_file(bytes):
+    chunk_file = create_temp_file_for_chunk()
+
+    with open(chunk_file, 'wb') as fh:
+        fh.write(bytes)
+
+    return chunk_file
+
+
+def create_temp_file_for_chunk():
+    fd, path = tempfile.mkstemp(prefix="tus-upload-chunk-")
+    os.close(fd)
+    return path
+
+
+def get_or_create_temp_file_for_upload(upload):
     if not upload.temporary_file_path:
-        fd, path = tempfile.mkstemp(prefix="tus-upload-part-")
+        fd, path = tempfile.mkstemp(prefix="tus-upload-")
         os.close(fd)
         upload.temporary_file_path = path
         upload.save()
     assert os.path.isfile(upload.temporary_file_path)
     return upload.temporary_file_path
+
+
+def create_checksum(bytes, checksum_algorithm):
+    m = hashlib.new(checksum_algorithm)
+    m.update(bytes)
+    return m.hexdigest()
+
+
+def pack_checksum(bytes, checksum_algorithm):
+    checksum =create_checksum(bytes, checksum_algorithm)
+    return '{checksum_algorithm} {checksum}'.format(checksum_algorithm=checksum_algorithm, checksum=checksum)
+
+
+def is_correct_checksum_for_file(checksum_algorithm, checksum, file_path):
+    bytes = read_bytes(file_path)
+    bytes_checksum = create_checksum(bytes, checksum_algorithm)
+    return bytes_checksum == checksum

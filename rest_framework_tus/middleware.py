@@ -38,6 +38,9 @@ class TusMiddleware(MiddlewareMixin):
         # Parse upload metadata
         self.parse_upload_metadata(request)
 
+        # Parse upload checksum
+        self.parse_upload_checksum(request)
+
     def process_response(self, request, response):
         if 'Tus-Resumable' not in response:
             response['Tus-Resumable'] = tus_api_version
@@ -79,6 +82,21 @@ class TusMiddleware(MiddlewareMixin):
 
         # Set upload length
         setattr(request, constants.UPLOAD_LENGTH_FIELD_NAME, int(upload_length))
+
+    @classmethod
+    def parse_upload_checksum(cls, request):
+        upload_checksum_header = request.META.get('headers', {}).get('Upload-Checksum', None)
+
+        if upload_checksum_header is None:
+            return
+
+        upload_checksum = list(upload_checksum_header.split(' '))
+        if len(upload_checksum) != 2:
+            return HttpResponse('Invalid value for "Upload-Checksum" header: {}.'.format(upload_checksum_header),
+                                status=status.HTTP_400_BAD_REQUEST)
+
+        # Set upload checksum
+        setattr(request, constants.UPLOAD_CHECKSUM_FIELD_NAME, upload_checksum)
 
     @classmethod
     def parse_upload_metadata(cls, request):

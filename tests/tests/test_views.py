@@ -217,3 +217,45 @@ class ViewTests(APITestCase):
 
         # Cleanup file
         upload.delete()
+
+    def test_terminate_while_saving(self):
+        # Create upload
+        upload = UploadFactory(
+            filename='test_data.txt', upload_metadata=json.dumps({'filename': 'test_data.txt'}), upload_length=100,
+            state=states.SAVING)
+
+        # Prepare headers
+        headers = {
+            'Tus-Resumable': tus_api_version,
+        }
+
+        # Perform request
+        result = self.client.delete(
+            reverse('rest_framework_tus:api:upload-detail', kwargs={'guid': upload.guid}), headers=headers)
+
+        # Check result
+        assert result.status_code == status.HTTP_409_CONFLICT
+
+        # Verify existence
+        assert get_upload_model().objects.filter(guid=upload.guid).exists()
+
+    def test_terminate(self):
+        # Create upload
+        upload = UploadFactory(
+            filename='test_data.txt', upload_metadata=json.dumps({'filename': 'test_data.txt'}), upload_length=100,
+            state=states.DONE)
+
+        # Prepare headers
+        headers = {
+            'Tus-Resumable': tus_api_version,
+        }
+
+        # Perform request
+        result = self.client.delete(
+            reverse('rest_framework_tus:api:upload-detail', kwargs={'guid': upload.guid}), headers=headers)
+
+        # Check result
+        assert result.status_code == status.HTTP_204_NO_CONTENT
+
+        # Verify existence
+        assert get_upload_model().objects.filter(guid=upload.guid).exists() is False

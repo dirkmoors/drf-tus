@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 import os
 
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABCMeta, abstractmethod
 
 from django.core.files import File
 from six import with_metaclass
@@ -49,6 +49,26 @@ class DefaultSaveStrategy(AbstractUploadSaveStrategy):
 
         # Finish upload
         self.finish()
+
+
+# @task
+# def save_task(upload_pk):
+#     upload = get_upload_model().objects.get(pk=upload_pk)
+#
+#     # Save temporary field to file field
+#     file_field = getattr(upload, 'destination')
+#     file_field.save(upload.filename, File(open(upload.temporary_file_path)))
+#
+#     # Finish upload
+#     upload.finish()
+#
+# class CelerySaveStrategy(AbstractUploadSaveStrategy):
+#     destination_file_field = 'destination'
+#
+#     def handle_save(self):
+#         save_task.delay()
+
+
 
 
 def get_save_strategy(import_path=None):

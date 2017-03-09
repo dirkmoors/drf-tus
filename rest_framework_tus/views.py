@@ -6,6 +6,7 @@ import json
 
 from django.http import Http404
 from django.urls.base import reverse
+from django.utils.translation import ugettext_lazy as _
 
 from rest_framework import mixins, status
 from rest_framework.exceptions import MethodNotAllowed
@@ -147,11 +148,28 @@ class TusPatchMixin(mixins.UpdateModelMixin):
                     .format(content_type), status=status.HTTP_400_BAD_REQUEST)
 
 
+class TusTerminateMixin(mixins.DestroyModelMixin):
+    def destroy(self, request, *args, **kwargs):
+        # Retrieve object
+        upload = self.get_object()
+
+        # When the upload is still saving, we're not able to destroy the entity
+        if upload.state == states.SAVING:
+            return Response(_('Unable to terminate upload while in state "{}".'.format(upload.state)),
+                            status=status.HTTP_409_CONFLICT)
+
+        # Destroy object
+        upload.delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 class UploadViewSet(TusCreateMixin,
                     TusPatchMixin,
-                    mixins.ListModelMixin,
-                    mixins.RetrieveModelMixin,
+                    # mixins.ListModelMixin,
+                    # mixins.RetrieveModelMixin,
                     TusHeadMixin,
+                    TusTerminateMixin,
                     GenericViewSet):
     serializer_class = UploadSerializer
     metadata_class = UploadMetadata

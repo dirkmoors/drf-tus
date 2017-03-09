@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-import logging
 import json
-import os
+import logging
 
 from django.http import Http404
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
-
 from rest_framework import mixins, status
 from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.metadata import BaseMetadata
@@ -18,12 +16,11 @@ from rest_framework.viewsets import GenericViewSet
 from rest_framework_tus.parsers import TusUploadStreamParser
 from . import tus_api_version, tus_api_version_supported, tus_api_extensions, tus_api_checksum_algorithms, \
     settings as tus_settings, constants, signals, states
-
-from .models import get_upload_model
-from .exceptions import Conflict
-from .serializers import UploadSerializer
-from .utils import encode_upload_metadata, write_chunk_to_temp_file, read_bytes, checksum_matches
 from .compat import reverse
+from .exceptions import Conflict
+from .models import get_upload_model
+from .serializers import UploadSerializer
+from .utils import encode_upload_metadata, checksum_matches
 
 logger = logging.getLogger(__name__)
 
@@ -184,31 +181,24 @@ class TusPatchMixin(mixins.UpdateModelMixin):
             upload.save()
 
         # Write chunk
-        try:
-            chunk_file = write_chunk_to_temp_file(self.get_chunk(request))
-        except Exception as e:
-            return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
+        chunk_bytes = self.get_chunk(request)
 
         # Check checksum  (http://tus.io/protocols/resumable-upload.html#checksum)
         upload_checksum = getattr(request, constants.UPLOAD_CHECKSUM_FIELD_NAME, None)
         if upload_checksum is not None:
             if upload_checksum[0] not in tus_api_checksum_algorithms:
-                os.remove(chunk_file)
                 return Response('Unsupported Checksum Algorithm: {}.'.format(
                     upload_checksum[0]), status=status.HTTP_400_BAD_REQUEST)
             elif not checksum_matches(
-                upload_checksum[0], upload_checksum[1], chunk_file):
-                os.remove(chunk_file)
+                upload_checksum[0], upload_checksum[1], chunk_bytes):
                 return Response('Checksum Mismatch.', status=460)
 
         # Write file
         chunk_size = int(request.META.get('CONTENT_LENGTH', 102400))
         try:
-            upload.write_data(read_bytes(chunk_file), chunk_size)
+            upload.write_data(chunk_bytes, chunk_size)
         except Exception as e:
             return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
-        finally:
-            os.remove(chunk_file)
 
         headers = {
             'Upload-Offset': upload.upload_offset,

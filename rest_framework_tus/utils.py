@@ -140,15 +140,14 @@ def create_checksum_header(bytes, checksum_algorithm):
     return '{checksum_algorithm} {checksum}'.format(checksum_algorithm=checksum_algorithm, checksum=checksum)
 
 
-def checksum_matches(checksum_algorithm, checksum, file_path):
+def checksum_matches(checksum_algorithm, checksum, bytes):
     """
     Checks if the given checksum matches the checksum for the data in the file
 
     :param str checksum_algorithm: The checksum algorithm to use
     :param str checksum: The original hex-checksum to match against
-    :param str file_path: The local path to the file to read the data from
+    :param six.binary_type bytes: The bytes to check
     :return bool: Whether or not the newly calculated checksum matches the given checksum
     """
-    bytes = read_bytes(file_path)
     bytes_checksum = create_checksum(bytes, checksum_algorithm)
     return bytes_checksum == checksum

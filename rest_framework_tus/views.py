@@ -164,11 +164,12 @@ class TusPatchMixin(mixins.UpdateModelMixin):
             return request.data['chunk']
         return request.body
 
-    def validate_chunk(self, chunk_bytes):
+    def validate_chunk(self, offset, chunk_bytes):
         """
         Handler to validate chunks before they are actually written to the buffer file. Should throw a ValidationError
           if something's off.
 
+        :param int offset:
         :param six.binary_type chunk_bytes:
         :return six.binary_type: The chunk_bytes
         """
@@ -223,7 +224,7 @@ class TusPatchMixin(mixins.UpdateModelMixin):
                 return Response('Checksum Mismatch.', status=460)
 
         # Run chunk validator
-        chunk_bytes = self.validate_chunk(chunk_bytes)
+        chunk_bytes = self.validate_chunk(upload_offset, chunk_bytes)
 
         # Check for data
         if not chunk_bytes:

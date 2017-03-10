@@ -3,6 +3,12 @@
 History
 -------
 
+1.11 (2017-03-10)
++++++++++++++++++
+
+* Implemented `validate_chunk` handler method in TusPatchMixin
+* Implemented `validate_success_headers` handler method in TusCreateMixin
+
 1.10 (2017-03-09)
 +++++++++++++++++
 

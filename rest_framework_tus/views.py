@@ -132,6 +132,9 @@ class TusCreateMixin(mixins.CreateModelMixin):
         # Add upload expiry to headers
         add_expiry_header(upload, headers)
 
+        # Validate headers
+        headers = self.validate_success_headers(headers)
+
         # By default, don't include a response body
         if not tus_settings.TUS_RESPONSE_BODY_ENABLED:
             return Response(headers=headers, status=status.HTTP_201_CREATED)
@@ -144,12 +147,32 @@ class TusCreateMixin(mixins.CreateModelMixin):
         except (TypeError, KeyError):
             return {}
 
+    def validate_success_headers(self, headers):
+        """
+        Handler to validate success headers before the response is sent. Should throw a ValidationError if
+          something's off.
+
+        :param dict headers:
+        :return dict: The headers
+        """
+        return headers
+
 
 class TusPatchMixin(mixins.UpdateModelMixin):
     def get_chunk(self, request):
         if TusUploadStreamParser in self.parser_classes:
             return request.data['chunk']
         return request.body
+
+    def validate_chunk(self, chunk_bytes):
+        """
+        Handler to validate chunks before they are actually written to the buffer file. Should throw a ValidationError
+          if something's off.
+
+        :param six.binary_type chunk_bytes:
+        :return six.binary_type: The chunk_bytes
+        """
+        return chunk_bytes
 
     def update(self, request, *args, **kwargs):
         raise MethodNotAllowed
@@ -160,7 +183,9 @@ class TusPatchMixin(mixins.UpdateModelMixin):
             return Response('Missing "{}" header.'.format('Tus-Resumable'), status=status.HTTP_400_BAD_REQUEST)
 
         # Validate content type
-        self.validate_content_type(request)
+        if not self._is_valid_content_type(request):
+            return Response('Invalid value for "Content-Type" header: {}. Expected "{}".'.format(
+                request.META['CONTENT_TYPE'], TusUploadStreamParser.media_type), status=status.HTTP_400_BAD_REQUEST)
 
         # Retrieve object
         upload = self.get_object()
@@ -180,8 +205,12 @@ class TusPatchMixin(mixins.UpdateModelMixin):
             upload.start_receiving()
             upload.save()
 
-        # Write chunk
+        # Get chunk from request
         chunk_bytes = self.get_chunk(request)
+
+        # Check for data
+        if not chunk_bytes:
+            return Response('No data.', status=status.HTTP_400_BAD_REQUEST)
 
         # Check checksum  (http://tus.io/protocols/resumable-upload.html#checksum)
         upload_checksum = getattr(request, constants.UPLOAD_CHECKSUM_FIELD_NAME, None)
@@ -192,6 +221,13 @@ class TusPatchMixin(mixins.UpdateModelMixin):
             elif not checksum_matches(
                 upload_checksum[0], upload_checksum[1], chunk_bytes):
                 return Response('Checksum Mismatch.', status=460)
+
+        # Run chunk validator
+        chunk_bytes = self.validate_chunk(chunk_bytes)
+
+        # Check for data
+        if not chunk_bytes:
+            return Response('No data. Make sure "validate_chunk" returns data.', status=status.HTTP_400_BAD_REQUEST)
 
         # Write file
         chunk_size = int(request.META.get('CONTENT_LENGTH', 102400))
@@ -220,15 +256,8 @@ class TusPatchMixin(mixins.UpdateModelMixin):
 
         return Response(serializer.data, headers=headers, status=status.HTTP_204_NO_CONTENT)
 
-    @classmethod
-    def validate_content_type(cls, request):
-        content_type = request.META.get('headers', {}).get('Content-Type', '')
-
-        if not content_type or content_type != TusUploadStreamParser.media_type:
-            return Response(
-                'Invalid value for "Content-Type" header: {}. Expected "{}".'
-                    .format(content_type, TusUploadStreamParser.media_type), status=status.HTTP_400_BAD_REQUEST)
-
+    def _is_valid_content_type(self, request):
+        return request.META['CONTENT_TYPE'] == TusUploadStreamParser.media_type
 
 class TusTerminateMixin(mixins.DestroyModelMixin):
     def destroy(self, request, *args, **kwargs):

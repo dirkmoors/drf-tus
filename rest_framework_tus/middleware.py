@@ -133,11 +133,24 @@ class TusMiddleware(object):
         setattr(request, constants.UPLOAD_METADATA_FIELD_NAME, upload_metadata)
 
     @classmethod
-    def get_header(cls, request, value, default_value=None):
-        result = request.META.get('headers', {}).get(value, None)
+    def get_header(cls, request, key, default_value=None):
+        # First, we try to retrieve the key in the "headers" dictionary
+        result = request.META.get('headers', {}).get(key, None)
+
+        # If we didn't find the key, or the value was "None", try to use the "HTTP_{uppercased-key}" key
         if result is None:
-            custom_value = 'HTTP_X_{}'.format(value.replace('-', '_').upper())
+            custom_value = 'HTTP_{}'.format(key.replace('-', '_').upper())
             result = request.META.get(custom_value, default_value)
+
+        # If we didn't find the key, or the value was "None", try to use the "HTTP_X_{uppercased-key}" key
         if result is None:
-            return default_value
+            # https://tools.ietf.org/html/rfc6648
+            custom_value = 'HTTP_X_{}'.format(key.replace('-', '_').upper())
+            result = request.META.get(custom_value, default_value)
+
+        # If we still didn't find the key, or the value was "None", return the default value
+        if result is None:
+            result = default_value
+
+        # Return the result
         return result

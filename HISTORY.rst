@@ -3,6 +3,11 @@
 History
 -------
 
+1.13 (2017-03-30)
++++++++++++++++++
+
+* Implemented handler for retrieving request headers in `TusMiddleware`.
+
 1.12 (2017-03-10)
 +++++++++++++++++
 

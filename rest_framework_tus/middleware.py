@@ -51,7 +51,7 @@ class TusMiddleware(object):
 
     @classmethod
     def parse_tus_version(cls, request):
-        tus_version = request.META.get('headers', {}).get('Tus-Resumable', None)
+        tus_version = cls.get_header(request, 'Tus-Resumable', None)
 
         if tus_version is None:
             return
@@ -61,7 +61,7 @@ class TusMiddleware(object):
 
     @classmethod
     def parse_upload_defer_length(cls, request,):
-        upload_defer_length = request.META.get('headers', {}).get('Upload-Defer-Length', None)
+        upload_defer_length = cls.get_header(request, 'Upload-Defer-Length', None)
 
         if not upload_defer_length:
             return
@@ -77,7 +77,7 @@ class TusMiddleware(object):
 
     @classmethod
     def parse_upload_offset(cls, request):
-        upload_offset = request.META.get('headers', {}).get('Upload-Offset', None)
+        upload_offset = cls.get_header(request, 'Upload-Offset', None)
 
         if upload_offset is None:
             return
@@ -87,7 +87,7 @@ class TusMiddleware(object):
 
     @classmethod
     def parse_upload_length(cls, request):
-        upload_length = request.META.get('headers', {}).get('Upload-Length', None)
+        upload_length = cls.get_header(request, 'Upload-Length', None)
 
         if upload_length is None:
             return
@@ -97,7 +97,7 @@ class TusMiddleware(object):
 
     @classmethod
     def parse_upload_checksum(cls, request):
-        upload_checksum_header = request.META.get('headers', {}).get('Upload-Checksum', None)
+        upload_checksum_header = cls.get_header(request, 'Upload-Checksum', None)
 
         if upload_checksum_header is None:
             return
@@ -112,7 +112,7 @@ class TusMiddleware(object):
 
     @classmethod
     def parse_upload_metadata(cls, request):
-        upload_meta_header = request.META.get('headers', {}).get('Upload-Metadata', None)
+        upload_meta_header = cls.get_header(request, 'Upload-Metadata', None)
 
         if upload_meta_header is None:
             return
@@ -131,3 +131,13 @@ class TusMiddleware(object):
 
         # Set upload_metadata
         setattr(request, constants.UPLOAD_METADATA_FIELD_NAME, upload_metadata)
+
+    @classmethod
+    def get_header(cls, request, value, default_value=None):
+        result = request.META.get('headers', {}).get(value, None)
+        if result is None:
+            custom_value = 'HTTP_X_{}'.format(value.replace('-', '_').upper())
+            result = request.META.get(custom_value, default_value)
+        if result is None:
+            return default_value
+        return result

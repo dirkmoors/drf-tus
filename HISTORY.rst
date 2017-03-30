@@ -3,6 +3,11 @@
 History
 -------
 
+1.14 (2017-03-30)
++++++++++++++++++
+
+* Updated default behaviour of the `get_header` handler in `TusMiddleware`.
+
 1.13 (2017-03-30)
 +++++++++++++++++
 

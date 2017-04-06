@@ -3,6 +3,11 @@
 History
 -------
 
+1.15 (2017-04-06)
++++++++++++++++++
+
+* Added missing migration and changed max_length to 255 for model `Upload`'s attribute `uploaded_file`
+
 1.14 (2017-03-30)
 +++++++++++++++++
 

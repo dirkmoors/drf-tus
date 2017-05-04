@@ -105,6 +105,9 @@ class TusCreateMixin(mixins.CreateModelMixin):
         # Get data from metadata
         filename = upload_metadata.get('filename', '')
 
+        # Validate the filename
+        filename = self.validate_filename(filename)
+
         # Retrieve serializer
         serializer = self.get_serializer(data={
             'upload_length': upload_length,
@@ -157,6 +160,14 @@ class TusCreateMixin(mixins.CreateModelMixin):
         """
         return headers
 
+    def validate_filename(self, filename):
+        """
+        Handler to validate the filename. Should throw a ValidationError if something's off.
+
+        :param six.text_type filename:
+        :return six.text_type: The filename
+        """
+        return filename
 
 class TusPatchMixin(mixins.UpdateModelMixin):
     def get_chunk(self, request):

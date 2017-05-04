@@ -3,6 +3,11 @@
 History
 -------
 
+1.16 (2017-05-04)
++++++++++++++++++
+
+* Implemented `validate_filename` handler in `TusCreateMixin`.
+
 1.15 (2017-04-06)
 +++++++++++++++++
 

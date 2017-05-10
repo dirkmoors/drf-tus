@@ -3,6 +3,11 @@
 History
 -------
 
+1.17 (2017-05-10)
++++++++++++++++++
+
+* Exchanged use of `base64.encodebytes` to `base64.b64encode`.
+
 1.16 (2017-05-04)
 +++++++++++++++++
 

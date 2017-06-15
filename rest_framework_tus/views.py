@@ -103,7 +103,7 @@ class TusCreateMixin(mixins.CreateModelMixin):
         upload_metadata = getattr(request, constants.UPLOAD_METADATA_FIELD_NAME, {})
 
         # Get data from metadata
-        filename = upload_metadata.get('filename', '')
+        filename = upload_metadata.get(tus_settings.TUS_FILENAME_METADATA_FIELD, '')
 
         # Validate the filename
         filename = self.validate_filename(filename)

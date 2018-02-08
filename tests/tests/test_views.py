@@ -97,7 +97,8 @@ class ViewTests(APITestCase):
             'Tus-Resumable': tus_api_version,
             'Upload-Defer-Length': 1,
             'Upload-Metadata': encode_upload_metadata({
-                'filename': 'test_file.jpg'
+                # Make sure non-ASCII characters are supported (regression)
+                'filename': 'test_file_٩(-̮̮̃-̃)۶ ٩(●̮̮̃•̃)۶ ٩(͡๏̯͡๏)۶ ٩(-̮̮̃•̃).jpg'
             })
         }
 
@@ -112,7 +113,7 @@ class ViewTests(APITestCase):
 
         # Validate upload
         assert upload.upload_length == -1
-        assert upload.filename == 'test_file.jpg'
+        assert upload.filename == 'test_file_٩(-̮̮̃-̃)۶ ٩(●̮̮̃•̃)۶ ٩(͡๏̯͡๏)۶ ٩(-̮̮̃•̃).jpg'
 
         # Validate response headers
         assert 'Tus-Resumable' in result

@@ -127,7 +127,7 @@ class TusMiddleware(object):
             key, value = key_value_pair.split(' ')
 
             # Store data
-            upload_metadata[key] = decode_base64(value.encode('utf-8')).decode('ascii')
+            upload_metadata[key] = decode_base64(value.encode('ascii')).decode('utf-8')
 
         # Set upload_metadata
         setattr(request, constants.UPLOAD_METADATA_FIELD_NAME, upload_metadata)

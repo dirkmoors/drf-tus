@@ -3,6 +3,11 @@
 History
 -------
 
+1.19 (2018-02-08)
++++++++++++++++++
+
+* Fixed bug that occured when pausing uploads (https://github.com/dirkmoors/drf-tus/pull/7)
+
 1.18 (2018-02-08)
 +++++++++++++++++
 

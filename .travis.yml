@@ -4,7 +4,7 @@ addons:
     sources:
       - deadsnakes
     packages:
-      - python3.5
+      - python3.3
 install:
   - pip install tox
 script:

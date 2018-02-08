@@ -2,28 +2,27 @@
 from __future__ import unicode_literals
 
 import os
+import six
 
-import copy
 import tempfile
 import hashlib
 
 from .compat import encode_base64
 
 
-def encode_base64_to_string(string_value):
+def encode_base64_to_string(data):
     """
-    Helper to encode a string or bytes value to a base64 string
+    Helper to encode a string or bytes value to a base64 string as bytes
 
-    :param six.text_types string_value:
-    :return str:
+    :param six.text_types data:
+    :return six.binary_type:
     """
-    data = copy.copy(string_value)
 
-    if not isinstance(data, bytes):
-        if isinstance(data, str):
+    if not isinstance(data, six.binary_type):
+        if isinstance(data, six.text_type):
             data = data.encode('utf-8')
         else:
-            data = str(data).encode('utf-8')
+            data = six.text_type(data).encode('utf-8')
 
     return encode_base64(data).decode('ascii').rstrip('\n')
 

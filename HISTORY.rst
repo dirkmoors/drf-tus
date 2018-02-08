@@ -3,6 +3,15 @@
 History
 -------
 
+1.18 (2018-02-08)
++++++++++++++++++
+
+* Make the metadata 'filename' key a setting. (https://github.com/dirkmoors/drf-tus/pull/2)
+* Switch from (Positive)IntegerField to BigIntegerField for the upload_length and upload_offset fields (https://github.com/dirkmoors/drf-tus/pull/3)
+* Increase Django version support up to 1.11 (https://github.com/dirkmoors/drf-tus/pull/4)
+* Fix unicode errors (https://github.com/dirkmoors/drf-tus/pull/5)
+* Updated travis configuration
+
 1.17 (2017-05-10)
 +++++++++++++++++
 

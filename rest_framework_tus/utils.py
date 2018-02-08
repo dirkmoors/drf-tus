@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 import os
 import six
+import sys
 
 import tempfile
 import hashlib
@@ -56,6 +57,8 @@ def write_bytes_to_file(file_path, offset, bytes, makedirs=False):
         if not os.path.isdir(os.path.dirname(file_path)):
             os.makedirs(os.path.dirname(file_path))
 
+    num_bytes_written = -1
+
     fh = None
     try:
         try:
@@ -63,12 +66,16 @@ def write_bytes_to_file(file_path, offset, bytes, makedirs=False):
         except IOError:
             fh = open(file_path, 'wb')
         fh.seek(offset, os.SEEK_SET)
-        fh.write(bytes)
+        num_bytes_written = fh.write(bytes)
     finally:
         if fh is not None:
             fh.close()
 
-    return len(bytes)
+    # For python version < 3, "fh.write" will return None...
+    if sys.version_info[0] < 3:
+        num_bytes_written = len(bytes)
+
+    return num_bytes_written
 
 
 def read_bytes_from_field_file(field_file):

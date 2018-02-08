@@ -6,7 +6,7 @@ import os
 import tempfile
 import uuid
 
-from django.core.exceptions import ImproperlyConfigured
+from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from django_fsm import FSMField, transition
@@ -38,6 +38,11 @@ class AbstractUpload(models.Model):
 
     class Meta:
         abstract = True
+
+    def clean_fields(self, exclude=None):
+        super(AbstractUpload, self).clean_fields(exclude=exclude)
+        if self.upload_offset < 0:
+            raise ValidationError(_('upload_offset should be >= 0.'))
 
     def write_data(self, bytes, chunk_size):
         write_bytes_to_file(self.temporary_file_path, self.upload_offset, bytes, makedirs=True)

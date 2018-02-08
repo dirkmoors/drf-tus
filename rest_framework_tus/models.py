@@ -45,10 +45,11 @@ class AbstractUpload(models.Model):
             raise ValidationError(_('upload_offset should be >= 0.'))
 
     def write_data(self, bytes, chunk_size):
-        write_bytes_to_file(self.temporary_file_path, self.upload_offset, bytes, makedirs=True)
+        num_bytes_written = write_bytes_to_file(self.temporary_file_path, self.upload_offset, bytes, makedirs=True)
 
-        self.upload_offset += chunk_size
-        self.save()
+        if num_bytes_written > 0:
+            self.upload_offset += num_bytes_written
+            self.save()
 
     def delete(self, *args, **kwargs):
         if self.temporary_file_path and os.path.exists(self.temporary_file_path):

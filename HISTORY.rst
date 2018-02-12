@@ -6,7 +6,7 @@ History
 1.20 (2018-02-12)
 +++++++++++++++++
 
-* Per-view max file size setting (https://github.com/dirkmoors/drf-tus/pull/7)
+* Implemented per-view max file size setting (https://github.com/dirkmoors/drf-tus/pull/8)
 
 1.19 (2018-02-08)
 +++++++++++++++++

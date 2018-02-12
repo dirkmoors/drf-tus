@@ -40,7 +40,7 @@ class UploadMetadata(BaseMetadata):
             'Tus-Resumable': tus_api_version,
             'Tus-Version': ','.join(tus_api_version_supported),
             'Tus-Extension': ','.join(tus_api_extensions),
-            'Tus-Max-Size': tus_settings.TUS_MAX_FILE_SIZE,
+            'Tus-Max-Size': getattr(view, 'max_file_size', tus_settings.TUS_MAX_FILE_SIZE),
             'Tus-Checksum-Algorithm': ','.join(tus_api_checksum_algorithms),
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': 'PATCH,HEAD,GET,POST,OPTIONS',
@@ -90,8 +90,9 @@ class TusCreateMixin(mixins.CreateModelMixin):
         upload_length = getattr(request, constants.UPLOAD_LENGTH_FIELD_NAME, -1)
 
         # Validate upload_length
-        if upload_length > tus_settings.TUS_MAX_FILE_SIZE:
-            return Response('Invalid "Upload-Length". Maximum value: {}.'.format(tus_settings.TUS_MAX_FILE_SIZE),
+        max_file_size = getattr(self, 'max_file_size', tus_settings.TUS_MAX_FILE_SIZE)
+        if upload_length > max_file_size:
+            return Response('Invalid "Upload-Length". Maximum value: {}.'.format(max_file_size),
                             status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE)
 
         # If upload_length is not given, we expect the defer header!

@@ -3,6 +3,11 @@
 History
 -------
 
+1.21 (2018-08-01)
++++++++++++++++++
+
+* Updated Django dependency and dropped support for Python 3.3.x (https://github.com/dirkmoors/drf-tus/pull/9)
+
 1.20 (2018-02-12)
 +++++++++++++++++
 

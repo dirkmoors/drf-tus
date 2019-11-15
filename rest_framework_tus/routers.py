@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 
 import rest_framework
-from rest_framework.routers import Route, DynamicRoute, SimpleRouter
+from rest_framework.routers import Route, DynamicListRoute, DynamicDetailRoute, SimpleRouter
 
 
 def get_list_route():
@@ -49,20 +49,18 @@ class TusAPIRouter(SimpleRouter):
         # Dynamically generated list routes.
         # Generated using @list_route decorator
         # on methods of the viewset.
-        DynamicRoute(
+        DynamicListRoute(
             url=r'^{prefix}/{methodname}{trailing_slash}$',
             name='{basename}-{methodnamehyphen}',
-            detail=False,
             initkwargs={}
         ),
         # Detail route.
         get_detail_route(),
         # Dynamically generated detail routes.
         # Generated using @detail_route decorator on methods of the viewset.
-        DynamicRoute(
+        DynamicDetailRoute(
             url=r'^{prefix}/{lookup}/{methodname}{trailing_slash}$',
             name='{basename}-{methodnamehyphen}',
-            detail=True,
             initkwargs={}
         ),
     ]

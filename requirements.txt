@@ -1,2 +1,2 @@
-
+djangorestframework>=3.11.0
 # Additional requirements go here

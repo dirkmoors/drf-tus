@@ -120,7 +120,7 @@ class Upload(AbstractUpload):
 
 def get_upload_model():
     """
-    Returns the User model that is active in this project.
+    Returns the Upload model that is active in this project.
     """
     from django.apps import apps as django_apps
     from .settings import TUS_UPLOAD_MODEL

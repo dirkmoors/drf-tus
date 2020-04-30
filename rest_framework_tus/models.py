@@ -71,6 +71,9 @@ class AbstractUpload(models.Model):
     def temporary_file_exists(self):
         return self.temporary_file_path and os.path.isfile(self.temporary_file_path)
 
+    def _temporary_file_exists(self):
+        return self.temporary_file_exists()
+
     def get_or_create_temporary_file(self):
         if not self.temporary_file_path:
             fd, path = tempfile.mkstemp(prefix="tus-upload-")
@@ -80,7 +83,7 @@ class AbstractUpload(models.Model):
         assert os.path.isfile(self.temporary_file_path)
         return self.temporary_file_path
 
-    @transition(field=state, source=states.INITIAL, target=states.RECEIVING, conditions=[temporary_file_exists])
+    @transition(field=state, source=states.INITIAL, target=states.RECEIVING, conditions=[_temporary_file_exists])
     def start_receiving(self):
         """
         State transition to indicate the first file chunk has been received successfully

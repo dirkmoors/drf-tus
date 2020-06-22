@@ -125,6 +125,11 @@ class TusCreateMixin(mixins.CreateModelMixin):
         # Get upload from serializer
         upload = serializer.instance
 
+        # Set the user if the upload has a user field
+        if request.user.is_authenticated and hasattr(upload, 'user'):
+            upload.user = request.user
+            upload.save()
+
         # Prepare response headers
         headers = self.get_success_headers(serializer.data)
 

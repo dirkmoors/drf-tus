@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-import rest_framework
-from rest_framework.routers import Route, DynamicListRoute, DynamicDetailRoute, SimpleRouter
+from rest_framework.routers import Route, DynamicRoute, SimpleRouter
 
 
 def get_list_route():
@@ -13,11 +12,9 @@ def get_list_route():
             'post': 'create'
         },
         name='{basename}-list',
+        detail=False,
         initkwargs={'suffix': 'List'}
     )
-
-    if rest_framework.__version__ > '3.8':
-        list_route_data['detail'] = False
 
     return Route(**list_route_data)
 
@@ -33,11 +30,9 @@ def get_detail_route():
             'head': 'info'
         },
         name='{basename}-detail',
+        detail=False,
         initkwargs={'suffix': 'Instance'}
     )
-
-    if rest_framework.__version__ > '3.8':
-        detail_route_data['detail'] = False
 
     return Route(**detail_route_data)
 
@@ -49,18 +44,20 @@ class TusAPIRouter(SimpleRouter):
         # Dynamically generated list routes.
         # Generated using @list_route decorator
         # on methods of the viewset.
-        DynamicListRoute(
+        DynamicRoute(
             url=r'^{prefix}/{methodname}{trailing_slash}$',
             name='{basename}-{methodnamehyphen}',
+            detail=False,
             initkwargs={}
         ),
         # Detail route.
         get_detail_route(),
         # Dynamically generated detail routes.
         # Generated using @detail_route decorator on methods of the viewset.
-        DynamicDetailRoute(
+        DynamicRoute(
             url=r'^{prefix}/{lookup}/{methodname}{trailing_slash}$',
             name='{basename}-{methodnamehyphen}',
+            detail=True,
             initkwargs={}
         ),
     ]

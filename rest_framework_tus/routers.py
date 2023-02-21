@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+import rest_framework
 from rest_framework.routers import Route, DynamicRoute, SimpleRouter
 
 

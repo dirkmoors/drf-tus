@@ -13,11 +13,9 @@ def get_list_route():
             'post': 'create'
         },
         name='{basename}-list',
+        detail=False,
         initkwargs={'suffix': 'List'}
     )
-
-    if rest_framework.__version__ > '3.8':
-        list_route_data['detail'] = False
 
     return Route(**list_route_data)
 
@@ -33,11 +31,9 @@ def get_detail_route():
             'head': 'info'
         },
         name='{basename}-detail',
+        detail=False,
         initkwargs={'suffix': 'Instance'}
     )
-
-    if rest_framework.__version__ > '3.8':
-        detail_route_data['detail'] = False
 
     return Route(**detail_route_data)
 

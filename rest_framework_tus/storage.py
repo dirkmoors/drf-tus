@@ -43,7 +43,7 @@ class DefaultSaveHandler(AbstractUploadSaveHandler):
     def handle_save(self):
         # Save temporary field to file field
         file_field = getattr(self.upload, self.destination_file_field)
-        file_field.save(self.upload.filename, File(open(self.upload.temporary_file_path)))
+        file_field.save(self.upload.filename, File(open(self.upload.temporary_file_path, 'rb')))
 
         # Finish upload
         self.finish()

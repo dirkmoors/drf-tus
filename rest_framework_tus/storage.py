@@ -1,18 +1,16 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 from abc import ABCMeta, abstractmethod
 
 from django.core.files import File
-from six import with_metaclass
-
 from django.utils.module_loading import import_string
 
+from six import with_metaclass
+
 from rest_framework_tus import signals
+
 from .settings import TUS_SAVE_HANDLER_CLASS
 
 
-class AbstractUploadSaveHandler(with_metaclass(ABCMeta, object)):
+class AbstractUploadSaveHandler(metaclass=ABCMeta):
     def __init__(self, upload):
         self.upload = upload
 
@@ -38,12 +36,12 @@ class AbstractUploadSaveHandler(with_metaclass(ABCMeta, object)):
 
 
 class DefaultSaveHandler(AbstractUploadSaveHandler):
-    destination_file_field = 'uploaded_file'
+    destination_file_field = "uploaded_file"
 
     def handle_save(self):
         # Save temporary field to file field
         file_field = getattr(self.upload, self.destination_file_field)
-        file_field.save(self.upload.filename, File(open(self.upload.temporary_file_path, 'rb')))
+        file_field.save(self.upload.filename, File(open(self.upload.temporary_file_path, "rb")))
 
         # Finish upload
         self.finish()

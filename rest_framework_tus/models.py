@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 import collections
 import os
 import tempfile
@@ -8,27 +5,33 @@ import uuid
 
 from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.db import models
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
+
 from django_fsm import FSMField, transition
 from jsonfield import JSONField
 
-from rest_framework_tus import signals
-from rest_framework_tus import states
+from rest_framework_tus import settings, signals, states
 from rest_framework_tus.utils import write_bytes_to_file
+
+
+def custom_upload_path(instance, filename):
+    # file will be uploaded to MEDIA_ROOT/<TUS_UPLOAD_DESTINATION>/<filename>
+    return os.path.join(settings.TUS_UPLOAD_DESTINATION, filename)
 
 
 class AbstractUpload(models.Model):
     """
     Abstract model for managing TUS uploads
     """
-    guid = models.UUIDField(_('GUID'), default=uuid.uuid4, unique=True)
+
+    guid = models.UUIDField(_("GUID"), default=uuid.uuid4, unique=True)
 
     state = FSMField(default=states.INITIAL)
 
     upload_offset = models.BigIntegerField(default=0)
     upload_length = models.BigIntegerField(default=-1)
 
-    upload_metadata = JSONField(load_kwargs={'object_pairs_hook': collections.OrderedDict})
+    upload_metadata = JSONField(load_kwargs={"object_pairs_hook": collections.OrderedDict})
 
     filename = models.CharField(max_length=255, blank=True)
 
@@ -40,9 +43,9 @@ class AbstractUpload(models.Model):
         abstract = True
 
     def clean_fields(self, exclude=None):
-        super(AbstractUpload, self).clean_fields(exclude=exclude)
+        super().clean_fields(exclude=exclude)
         if self.upload_offset < 0:
-            raise ValidationError(_('upload_offset should be >= 0.'))
+            raise ValidationError(_("upload_offset should be >= 0."))
 
     def write_data(self, bytes, chunk_size):
         num_bytes_written = write_bytes_to_file(self.temporary_file_path, self.upload_offset, bytes, makedirs=True)
@@ -54,16 +57,20 @@ class AbstractUpload(models.Model):
     def delete(self, *args, **kwargs):
         if self.temporary_file_path and os.path.exists(self.temporary_file_path):
             os.remove(self.temporary_file_path)
-        super(AbstractUpload, self).delete(*args, **kwargs)
+        super().delete(*args, **kwargs)
 
     def generate_filename(self):
-        return os.path.join('{}.bin'.format(uuid.uuid4()))
+        return os.path.join(f"{uuid.uuid4()}.bin")
 
     def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
         if not self.filename:
             self.filename = self.generate_filename()
-        return super(AbstractUpload, self).save(
-            force_insert=force_insert, force_update=force_update, using=using, update_fields=update_fields)
+        return super().save(
+            force_insert=force_insert,
+            force_update=force_update,
+            using=using,
+            update_fields=update_fields,
+        )
 
     def is_complete(self):
         return self.upload_offset == self.upload_length
@@ -113,12 +120,13 @@ class Upload(AbstractUpload):
     """
     Default Upload model
     """
-    uploaded_file = models.FileField(upload_to='uploaded', blank=True, null=True, max_length=255)
+
+    uploaded_file = models.FileField(upload_to=custom_upload_path, blank=True, null=True, max_length=255)
 
     def delete(self, *args, **kwargs):
         if self.state == states.DONE:
             self.uploaded_file.delete()
-        super(Upload, self).delete(*args, **kwargs)
+        super().delete(*args, **kwargs)
 
 
 def get_upload_model():
@@ -126,10 +134,12 @@ def get_upload_model():
     Returns the Upload model that is active in this project.
     """
     from django.apps import apps as django_apps
+
     from .settings import TUS_UPLOAD_MODEL
+
     try:
         return django_apps.get_model(TUS_UPLOAD_MODEL)
     except ValueError:
-        raise ImproperlyConfigured('UPLOAD_MODEL must be of the form \'app_label.model_name\'')
+        raise ImproperlyConfigured("UPLOAD_MODEL must be of the form 'app_label.model_name'")
     except LookupError:
-        raise ImproperlyConfigured('UPLOAD_MODEL refers to model \'%s\' that has not been installed' % TUS_UPLOAD_MODEL)
+        raise ImproperlyConfigured("UPLOAD_MODEL refers to model '%s' that has not been installed" % TUS_UPLOAD_MODEL)

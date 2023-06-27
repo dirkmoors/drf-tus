@@ -8,26 +8,26 @@ To use drf-tus in a project, add it to your `INSTALLED_APPS`:
 
     INSTALLED_APPS = (
         ...
-        'rest_framework_tus',
+        "rest_framework_tus",
         ...
     )
 
-Add the middleware to `MIDDLEWARE` (or `MIDDLEWARE_CLASSES` for Django < 1.10)
+Add the middleware to `MIDDLEWARE`:
 
 .. code-block:: python
 
     MIDDLEWARE = (
         ...
-        'rest_framework_tus.middleware.TusMiddleware',
+        "rest_framework_tus.middleware.TusMiddleware",
         ...
     )
 
-Add drf-tus's URL patterns:
+Add URL patterns for drf-tus:
 
 .. code-block:: python
 
     urlpatterns = [
         ...
-        url(r'^', include('rest_framework_tus.urls', namespace='rest_framework_tus')),
+        path(r"^", include("rest_framework_tus.urls", namespace="rest_framework_tus")),
         ...
     ]

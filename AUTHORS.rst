@@ -10,4 +10,5 @@ Development Lead
 Contributors
 ------------
 
-* Jef Geskens <jef.geskens@gmail.com >
+* Jef Geskens <jef.geskens@gmail.com>
+* Michael Pölzl <michael.poelzl@gmail.com>

@@ -1,8 +1,20 @@
 name: Python package
 
 on:
-  - push
-  - pull_request
+  pull_request:
+    branches:
+    - 'main'
+    paths-ignore:
+    - 'docs/*'
+    - 'example/*'
+    - 'README.rst'
+    - '.coverage'
+    - '.editorconfig'
+    - '.gitignore'
+    - '.pre-commit-config.yaml'
+    - 'LICENSE'
+    - 'Makefile'
+    - 'MANIFEST.in'
 
 jobs:
   build:

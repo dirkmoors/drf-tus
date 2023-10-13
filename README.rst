@@ -5,7 +5,7 @@ drf-tus
 .. image:: https://badge.fury.io/py/drf-tus.svg
     :target: https://badge.fury.io/py/drf-tus
 
-.. image:: https://github.com/OWNER/REPOSITORY/actions/workflows/ci.yml/badge.svg
+.. image:: https://github.com/dirkmoors/drf-tus/actions/workflows/ci.yml/badge.svg
     :target: https://github.com/dirkmoors/drf-tus/actions
 
 A Tus (tus.io) library for Django Rest Framework

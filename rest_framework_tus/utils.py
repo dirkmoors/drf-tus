@@ -1,12 +1,9 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
-import os
-import six
-import sys
-
-import tempfile
 import hashlib
+import os
+import sys
+import tempfile
+
+import six
 
 from .compat import encode_base64
 
@@ -19,13 +16,13 @@ def encode_base64_to_string(data):
     :return six.binary_type:
     """
 
-    if not isinstance(data, six.binary_type):
-        if isinstance(data, six.text_type):
-            data = data.encode('utf-8')
+    if not isinstance(data, bytes):
+        if isinstance(data, str):
+            data = data.encode("utf-8")
         else:
-            data = six.text_type(data).encode('utf-8')
+            data = str(data).encode("utf-8")
 
-    return encode_base64(data).decode('ascii').rstrip('\n')
+    return encode_base64(data).decode("ascii").rstrip("\n")
 
 
 def encode_upload_metadata(upload_metadata):
@@ -36,11 +33,13 @@ def encode_upload_metadata(upload_metadata):
     :return str:
     """
     # Prepare encoded data
-    encoded_data = [(key, encode_base64_to_string(value))
-                    for (key, value) in sorted(upload_metadata.items(), key=lambda item: item[0])]
+    encoded_data = [
+        (key, encode_base64_to_string(value))
+        for (key, value) in sorted(upload_metadata.items(), key=lambda item: item[0])
+    ]
 
     # Encode into string
-    return ','.join([' '.join([key, encoded_value]) for key, encoded_value in encoded_data])
+    return ",".join([" ".join([key, encoded_value]) for key, encoded_value in encoded_data])
 
 
 def write_bytes_to_file(file_path, offset, bytes, makedirs=False):
@@ -62,9 +61,9 @@ def write_bytes_to_file(file_path, offset, bytes, makedirs=False):
     fh = None
     try:
         try:
-            fh = open(file_path, 'r+b')
-        except IOError:
-            fh = open(file_path, 'wb')
+            fh = open(file_path, "r+b")
+        except OSError:
+            fh = open(file_path, "wb")
         fh.seek(offset, os.SEEK_SET)
         num_bytes_written = fh.write(bytes)
     finally:
@@ -100,7 +99,7 @@ def read_bytes(path):
     :param str path: The local path to the file to read
     :return six.binary_type: bytes read from the given field_file
     """
-    with open(path, 'r+b') as fh:
+    with open(path, "r+b") as fh:
         result = fh.read()
     return result
 
@@ -115,7 +114,7 @@ def write_chunk_to_temp_file(bytes):
     fd, chunk_file = tempfile.mkstemp(prefix="tus-upload-chunk-")
     os.close(fd)
 
-    with open(chunk_file, 'wb') as fh:
+    with open(chunk_file, "wb") as fh:
         fh.write(bytes)
 
     return chunk_file
@@ -143,7 +142,7 @@ def create_checksum_header(bytes, checksum_algorithm):
     :return str: The checksum algorithm, followed by the checksum (hex)
     """
     checksum = create_checksum(bytes, checksum_algorithm)
-    return '{checksum_algorithm} {checksum}'.format(checksum_algorithm=checksum_algorithm, checksum=checksum)
+    return f"{checksum_algorithm} {checksum}"
 
 
 def checksum_matches(checksum_algorithm, checksum, bytes):

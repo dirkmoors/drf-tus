@@ -1,10 +1,7 @@
-# -*- coding: utf-8
-from __future__ import unicode_literals, absolute_import
+from django.urls import include, path
 
-from django.conf.urls import url, include
-
-from rest_framework_tus.urls import urlpatterns as rest_framework_tus_urls
+from rest_framework_tus.urls import urlpatterns as rest_framework_tus_urlpatterns
 
 urlpatterns = [
-    url(r'^', include(rest_framework_tus_urls, namespace='rest_framework_tus')),
+    path(r"", include((rest_framework_tus_urlpatterns, "rest_framework_tus"), namespace="api")),
 ]

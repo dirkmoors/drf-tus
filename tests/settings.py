@@ -1,7 +1,5 @@
-# -*- coding: utf-8
-from __future__ import unicode_literals, absolute_import
-
 import os
+
 import django
 
 DEBUG = True
@@ -17,7 +15,7 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": ":memory:",
-    }
+    },
 }
 
 ROOT_URLCONF = "tests.urls"
@@ -26,17 +24,12 @@ INSTALLED_APPS = [
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sites",
-
     "rest_framework_tus",
 ]
 
 SITE_ID = 1
 
 if django.VERSION >= (1, 10):
-    MIDDLEWARE = (
-        'rest_framework_tus.middleware.TusMiddleware',
-    )
+    MIDDLEWARE = ("rest_framework_tus.middleware.TusMiddleware",)
 else:
-    MIDDLEWARE_CLASSES = (
-        'rest_framework_tus.middleware.TusMiddleware',
-    )
+    MIDDLEWARE_CLASSES = ("rest_framework_tus.middleware.TusMiddleware",)

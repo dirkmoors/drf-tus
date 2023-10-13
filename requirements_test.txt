@@ -1,11 +1,10 @@
-codecov>=2.1.13
-coverage==7.2.7
-factory_boy>=3.2.1
-flake8>=6.0.0
-mock>=5.0.2
+coverage>=7.3.2
+factory_boy>=3.3.0
+flake8>=6.1.0
+mock>=5.1.0
 
 # Additional test requirements go here
-pytest>=7.4.0
+pytest>=7.4.2
 pytest-cov>=4.1.0
 pytest-django>=4.5.2
 tox>=4.6.3

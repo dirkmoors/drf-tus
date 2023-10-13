@@ -8,9 +8,6 @@ drf-tus
 .. image:: https://travis-ci.org/dirkmoors/drf-tus.svg?branch=master
     :target: https://travis-ci.org/dirkmoors/drf-tus
 
-.. image:: https://codecov.io/gh/dirkmoors/drf-tus/branch/master/graph/badge.svg
-    :target: https://codecov.io/gh/dirkmoors/drf-tus
-
 A Tus (tus.io) library for Django Rest Framework
 
 Documentation

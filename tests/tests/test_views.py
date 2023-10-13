@@ -290,7 +290,11 @@ class ViewTests(APITestCase):
 
             # Prepare checksum
             if checksum_algorithm is not None:
-                headers["Upload-Checksum"] = checksum or create_checksum_header(chunk, checksum_algorithm)
+                try:
+                    headers["Upload-Checksum"] = checksum or create_checksum_header(chunk, checksum_algorithm)
+                except ValueError:
+                    # Invalid checksum because algorithm is not supported by Python version
+                    headers["Upload-Checksum"] = f"{checksum_algorithm} blablabla"
 
             # Perform request
             result = self.client.patch(

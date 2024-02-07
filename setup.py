@@ -61,7 +61,7 @@ setup(
     include_package_data=True,
     install_requires=[
         "python-dateutil>=2.8.2",
-        "Django>=3.2,<=4.2",
+        "Django>=3.2,<6.0",
         "djangorestframework>=3.14.0",
         "jsonfield>=2.0.0",
         "django-fsm==2.8.1",

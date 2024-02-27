@@ -1,3 +1,16 @@
+[build-system]
+requires = ["setuptools>=61.0", "setuptools-git-versioning"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools-git-versioning]
+enabled = true
+
+[tool.setuptools]
+# ...
+# By default, include-package-data is true in pyproject.toml, so you do
+# NOT have to specify this line.
+include-package-data = true
+
 [tool.isort]
 known_first_party = ["drf-tus"]
 known_django = ["django"]
@@ -12,3 +25,52 @@ skip_gitignore = true
 line_length = 120
 target-version = ['py311']
 include = '\.pyi?$'
+
+[project]
+name = "drf-tus"
+dynamic = ["version"]
+description = "A Tus (tus.io) library for Django Rest Framework"
+readme = "README.rst"
+authors = [
+    { name = "Dirk Moors", email = "dirkmoors@gmail.com" },
+]
+
+dependencies = [
+    "python-dateutil>=2.8.2",
+    "Django>=3.2,<6.0",
+    "djangorestframework>=3.14.0",
+    "jsonfield>=2.0.0",
+    "django-fsm==2.8.1",
+    "six>=1.11.0",
+]
+license = { text = "MIT" }
+keywords = [
+    "drf-tus",
+    "tus",
+    "django",
+    "rest",
+    "framework",
+    "django-rest-framework",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Framework :: Django",
+    "Framework :: Django :: 3.2",
+    "Framework :: Django :: 4.0",
+    "Framework :: Django :: 4.1",
+    "Framework :: Django :: 4.2",
+    "Framework :: Django :: 5.0",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[project.urls]
+homepage = "https://github.com/dirkmoors/drf-tus"
+changelog = "https://github.com/dirkmoors/drf-tus/blob/master/HISTORY.rst"

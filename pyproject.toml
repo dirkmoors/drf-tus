@@ -5,12 +5,6 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools-git-versioning]
 enabled = true
 
-[tool.setuptools]
-# ...
-# By default, include-package-data is true in pyproject.toml, so you do
-# NOT have to specify this line.
-include-package-data = true
-
 [tool.isort]
 known_first_party = ["drf-tus"]
 known_django = ["django"]

@@ -1,4 +1,4 @@
-__version__ = "2.0.1"
+__version__ = "2.0.2"
 
 tus_api_version = "1.0.0"
 tus_api_version_supported = ["1.0.0"]

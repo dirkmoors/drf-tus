@@ -3,11 +3,11 @@
 History
 -------
 
-2.1.0 (2026-01-06)
+2.0.3 (2026-01-06)
 ++++++++++++++++++
-
 * Add support for Django 5.1 and 6.0.
 * Add support for Python 3.12, 3.13 and 3.14.
+* Fix release command and versioning templates.
 
 2.0.2 (2024-02-07)
 ++++++++++++++++++

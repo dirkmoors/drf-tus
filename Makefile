@@ -52,7 +52,7 @@ docs: ## generate Sphinx HTML documentation, including API docs
 
 release: clean ## package and upload a release
 	python -m build
-	twime upload dist/*
+	twine upload dist/*
 
 sdist: clean ## package
 	python -m build
